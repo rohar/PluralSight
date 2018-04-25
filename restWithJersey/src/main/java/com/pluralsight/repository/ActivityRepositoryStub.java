@@ -8,6 +8,7 @@ import java.util.List;
 
 public class ActivityRepositoryStub implements ActivityRepository {
 
+
     @Override
     public List<Activity> findAllActivities() {
         List<Activity> activities = new ArrayList<>();
@@ -27,8 +28,12 @@ public class ActivityRepositoryStub implements ActivityRepository {
 
     @Override
     public Activity findActivity(String activityId) {
+        if ("7777".equals(activityId)) {
+            return null; // ie not found
+        }
+
         Activity activity1 = new Activity();
-        activity1.setId("1234");
+        activity1.setId(activityId);
         activity1.setDescription("Swimming");
         activity1.setDuration(55);
 
@@ -39,5 +44,10 @@ public class ActivityRepositoryStub implements ActivityRepository {
         activity1.setUser(user);
 
         return activity1;
+    }
+
+    @Override
+    public void create(Activity activity) {
+        // should issue an insert statement to db
     }
 }
