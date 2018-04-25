@@ -4,6 +4,8 @@ import com.pluralsight.model.Activity;
 
 import java.util.List;
 
-public interface ActivityResource {
+public interface ActivityRepository {
     List<Activity> findAllActivities();
+
+    Activity findActivity(String activityId);
 }
