@@ -1,6 +1,7 @@
 package com.pluralsight;
 
 import org.glassfish.grizzly.http.server.HttpServer;
+import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
 
@@ -20,9 +21,11 @@ public class Main {
      * @return Grizzly HTTP server.
      */
     public static HttpServer startServer() {
+
+        final BookDao dao = new BookDao();
         // create a resource config that scans for JAX-RS resources and providers
         // in com.pluralsight package
-        final ResourceConfig rc = new ResourceConfig().packages("com.pluralsight");
+        final ResourceConfig rc = new BookApplication(dao);
 
         // create and start a new instance of grizzly http server
         // exposing the Jersey application at BASE_URI
