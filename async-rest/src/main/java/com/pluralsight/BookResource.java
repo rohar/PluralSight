@@ -1,9 +1,15 @@
 package com.pluralsight;
 
+import jersey.repackaged.com.google.common.util.concurrent.FutureCallback;
+import jersey.repackaged.com.google.common.util.concurrent.Futures;
+import jersey.repackaged.com.google.common.util.concurrent.ListenableFuture;
+import org.glassfish.jersey.server.ManagedAsync;
+
 import javax.ws.rs.*;
+import javax.ws.rs.container.AsyncResponse;
+import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-import java.util.Collection;
 
 /**
  *
@@ -16,23 +22,48 @@ public class BookResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public Collection<Book> getBooks() {
-        return dao.getBooks();
+    @ManagedAsync
+    public void getBooksAsync(@Suspended final AsyncResponse response) {
+        response.resume(dao.getBooks());
     }
 
     @GET
     @Path("/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Book getBook(@PathParam("id") String id) {
+    @ManagedAsync
+    public void getBookAsync(@PathParam("id") String id, @Suspended final AsyncResponse response) {
+        //return dao.getBook(id);
+        ListenableFuture<Book> bookFuture = dao.getBookAsync(id);
+        Futures.addCallback(bookFuture, new FutureCallback<Book>() {
+            @Override
+            public void onSuccess(Book book) {
+                response.resume(book);
+            }
 
-        return dao.getBook(id);
+            @Override
+            public void onFailure(Throwable thrown) {
+                response.resume(thrown);
+            }
+        });
     }
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Book addBook(Book book) {
-        return dao.addBook(book);
-    }
+    @ManagedAsync
+    public void addBookAsync(Book book, @Suspended AsyncResponse response) {
+        //response.resume(dao.addBook(book));
+        ListenableFuture<Book> bookFuture = dao.addBookAsync(book);
+        Futures.addCallback(bookFuture, new FutureCallback<Book>() {
+            @Override
+            public void onSuccess(Book addedBook) {
+                response.resume(addedBook);
+            }
 
+            @Override
+            public void onFailure(Throwable thrown) {
+                response.resume(thrown);
+            }
+        });
+    }
 }

@@ -15,7 +15,7 @@ import java.util.Date;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-public class BookResourceTest extends JerseyTest {
+public class BookResourceNoAsyncTest extends JerseyTest {
     private String book1_id;
     private String book2_id;
 
@@ -37,7 +37,7 @@ public class BookResourceTest extends JerseyTest {
         book.setIsbn(isbn);
 
         Entity<Book> bookEntity = Entity.entity(book, MediaType.APPLICATION_JSON);
-        return target("books_no_async").request().post(bookEntity);
+        return target("books").request().post(bookEntity);
     }
 
     @Test
@@ -64,13 +64,13 @@ public class BookResourceTest extends JerseyTest {
 
     @Test
     public void testGetBook() {
-        Book response = target("books_no_async").path(book1_id).request().get(Book.class);
+        Book response = target("books").path(book1_id).request().get(Book.class);
         assertNotNull(response);
     }
 
     @Test
     public void testGetBooks() {
-        Collection<Book> response = target("books_no_async").request().get(new GenericType<Collection<Book>>() {});
+        Collection<Book> response = target("books").request().get(new GenericType<Collection<Book>>() {});
         assertEquals(2, response.size());
     }
 
