@@ -32,9 +32,9 @@ public class ActivityClient {
     public List<Activity> get() {
         WebTarget target = client.target("http://localhost:8080/exercise-services/webapi/");
 
-        List<Activity> response = target.path("activities").request().get(new GenericType<List<Activity>>() {});
+        List<Activity> activity = target.path("activities").request().get(new GenericType<List<Activity>>() {});
 
-        return response;
+        return activity;
     }
 
     public Activity create(Activity activity) {
@@ -47,5 +47,27 @@ public class ActivityClient {
         }
 
         return response.readEntity(Activity.class);
+    }
+
+    public Activity update(Activity activity) {
+        WebTarget target = client.target("http://localhost:8080/exercise-services/webapi/");
+
+        Response response = target.path("activities/" + activity.getId()).request().put(Entity.entity(activity, MediaType.APPLICATION_JSON));
+
+        if (response.getStatus() != 200) {
+            throw new RuntimeException(response.getStatus() + ": there was an error on the server");
+        }
+
+        return response.readEntity(Activity.class);
+    }
+
+    public void delete(String activityId) {
+        WebTarget target = client.target("http://localhost:8080/exercise-services/webapi/");
+
+        Response response = target.path("activities/" + activityId).request().delete(Response.class);
+
+        if (response.getStatus() != 200) {
+            throw new RuntimeException(response.getStatus() + ": there was an error on the server");
+        }
     }
 }

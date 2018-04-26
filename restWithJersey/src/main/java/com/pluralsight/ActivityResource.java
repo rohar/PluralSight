@@ -16,6 +16,29 @@ import java.util.List;
 public class ActivityResource {
     private ActivityRepository activityRepository = new ActivityRepositoryStub();
 
+    @DELETE
+    @Path("{activityId}")
+    @Produces({MediaType.APPLICATION_JSON})
+    public Response deleteActivity(@PathParam("activityId") String activityId) {
+        activityRepository.delete(activityId);
+
+        return Response.ok().build();
+    }
+
+    @PUT
+    @Path("{activityId}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON})
+    public Response updateActivity(Activity activity) {
+        Activity updatedActivity = activityRepository.update(activity);
+
+        if (activity == null) {
+            return Response.status(Status.NOT_FOUND).build();
+        }
+
+        return Response.ok().entity(activity).build();
+    }
+
     @POST
     @Path("activity")
     @Consumes(MediaType.APPLICATION_JSON)

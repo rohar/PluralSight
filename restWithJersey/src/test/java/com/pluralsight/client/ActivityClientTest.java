@@ -10,6 +10,28 @@ import static org.junit.jupiter.api.Assertions.*;
 class ActivityClientTest {
 
     @Test
+    public void testDelete() {
+        ActivityClient client = new ActivityClient();
+
+        client.delete("1234");
+    }
+
+    @Test
+    public void testPut() {
+        ActivityClient client = new ActivityClient();
+
+        Activity activity = new Activity();
+        activity.setId("3456");
+        activity.setDescription("Bikram Yoga");
+        activity.setDuration(90);
+
+        activity = client.update(activity);
+
+
+        assertNotNull(activity);
+    }
+
+    @Test
     public void testCreate() {
         ActivityClient client = new ActivityClient();
 
