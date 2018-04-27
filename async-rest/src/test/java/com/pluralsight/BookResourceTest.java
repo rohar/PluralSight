@@ -1,22 +1,23 @@
 package com.pluralsight;
 
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 import com.jcabi.xml.XML;
 import com.jcabi.xml.XMLDocument;
+import org.glassfish.jersey.client.ClientConfig;
 import org.glassfish.jersey.test.JerseyTest;
 import org.glassfish.jersey.test.TestProperties;
 import org.junit.Before;
 import org.junit.Test;
 
 import javax.ws.rs.client.Entity;
-import javax.ws.rs.core.Application;
-import javax.ws.rs.core.GenericType;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import javax.ws.rs.core.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class BookResourceTest extends JerseyTest {
     private String book1_id;
@@ -30,6 +31,16 @@ public class BookResourceTest extends JerseyTest {
         final BookDao dao = new BookDao();
 
         return new BookApplication(dao);
+    }
+
+    /**
+     * Ensure null values don't appear in maps
+     * @param clientConfig
+     */
+    protected void configureClient(ClientConfig clientConfig) {
+        JacksonJsonProvider json = new JacksonJsonProvider();
+        json.configure(SerializationFeature.WRITE_NULL_MAP_VALUES, false);
+        clientConfig.register(json);
     }
 
     protected Response addBook(String author, String title, Date published, String isbn, String... extras) {
@@ -110,5 +121,48 @@ public class BookResourceTest extends JerseyTest {
         assertEquals("title1", xml.xpath("/books/book[@id='" + book1_id + "']/title/text()").get(0));
 
         assertEquals(2, xml.xpath("//book/author/text()").size());
+    }
+
+    @Test
+    public void testAddBookNoAuthor() {
+        Response response = addBook(null, "title", new Date(), "1111", "hello world");
+        assertEquals(400, response.getStatus());
+
+        String message = response.readEntity(String.class);
+        assertTrue(message.contains("author is a required field"));
+    }
+
+    @Test
+    public void testAddBookNoTitle() {
+        Response response = addBook("author", null, new Date(), "1111", "hello world");
+        assertEquals(400, response.getStatus());
+
+        String message = response.readEntity(String.class);
+        assertTrue(message.contains("title is a required field"));
+    }
+
+    @Test
+    public void testAddBookNoBook() {
+        Response response = target("books").request().post(null);
+        assertEquals(400, response.getStatus());
+    }
+
+    @Test
+    public void bookNotFoundWithMessage() {
+        Response response = target("books").path("1").request().get();
+
+        assertEquals(404, response.getStatus());
+
+        String message = response.readEntity(String.class);
+        assertTrue(message.contains("Book 1 is not found"));
+    }
+
+    @Test
+    public void testBookEntityTagNotModified() {
+        EntityTag entityTag = target("books").path(book1_id).request().get().getEntityTag();
+        assertNotNull(entityTag);
+
+        Response response = target("books").path(book1_id).request().header("If-None-Match", entityTag).get();
+        assertEquals(304, response.getStatus());
     }
 }

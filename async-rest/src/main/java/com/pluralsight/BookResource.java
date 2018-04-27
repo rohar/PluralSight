@@ -3,22 +3,24 @@ package com.pluralsight;
 import jersey.repackaged.com.google.common.util.concurrent.FutureCallback;
 import jersey.repackaged.com.google.common.util.concurrent.Futures;
 import jersey.repackaged.com.google.common.util.concurrent.ListenableFuture;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.glassfish.jersey.server.ManagedAsync;
 
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 import javax.ws.rs.*;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.*;
 
 /**
  *
  */
 @Path("/books")
 public class BookResource {
-    @Context
-    BookDao dao;
+    @Context BookDao dao;
     //BookDao dao = new BookDao();
+    @Context Request request;
 
     @GET
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML + ";qs=0.5"}) // qs between 0 and 1, JSON preferred
@@ -37,7 +39,14 @@ public class BookResource {
         Futures.addCallback(bookFuture, new FutureCallback<Book>() {
             @Override
             public void onSuccess(Book book) {
-                response.resume(book);
+                EntityTag entityTag = generateEntityTag(book);
+                Response.ResponseBuilder rb = request.evaluatePreconditions(entityTag);
+                if (rb != null) {
+                    // for conditional GET, hasn't been modified, so a 304 will be returned
+                    response.resume(rb.build());
+                } else {
+                    response.resume(Response.ok().tag(entityTag).entity(book).build());
+                }
             }
 
             @Override
@@ -51,7 +60,7 @@ public class BookResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @ManagedAsync
-    public void addBook(Book book, @Suspended AsyncResponse response) {
+    public void addBook(@Valid @NotNull Book book, @Suspended AsyncResponse response) {
         //response.resume(dao.addBook(book));
         ListenableFuture<Book> bookFuture = dao.addBookAsync(book);
         Futures.addCallback(bookFuture, new FutureCallback<Book>() {
@@ -65,5 +74,9 @@ public class BookResource {
                 response.resume(thrown);
             }
         });
+    }
+
+    EntityTag generateEntityTag(Book book) {
+        return new EntityTag(DigestUtils.md5Hex(book.getAuthor() + book.getTitle() + book.getPublished() + book.getExtras() + book.getIsbn()));
     }
 }

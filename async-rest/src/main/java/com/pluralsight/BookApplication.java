@@ -6,6 +6,7 @@ import com.fasterxml.jackson.jaxrs.xml.JacksonJaxbXMLProvider;
 import com.fasterxml.jackson.jaxrs.xml.JacksonXMLProvider;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.glassfish.jersey.server.ResourceConfig;
+import org.glassfish.jersey.server.ServerProperties;
 
 /**
  *
@@ -29,5 +30,6 @@ public class BookApplication extends ResourceConfig {
         });
         register(json);
         register(xml);
+        property(ServerProperties.BV_SEND_ERROR_IN_RESPONSE, true);
     }
 }

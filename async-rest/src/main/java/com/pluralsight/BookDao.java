@@ -38,8 +38,13 @@ public class BookDao {
         return books.values();
     }
 
-    Book getBook(String id) {
-        return books.get(id);
+    Book getBook(String id) throws BookNotFoundException {
+        Book book = books.get(id);
+        if (book == null) {
+            throw new BookNotFoundException("Book " + id + " is not found");
+        }
+
+        return book;
     }
 
     ListenableFuture<Book> getBookAsync(final String id) {
