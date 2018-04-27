@@ -21,17 +21,17 @@ public class BookResource {
     //BookDao dao = new BookDao();
 
     @GET
-    @Produces(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML + ";qs=0.5"}) // qs between 0 and 1, JSON preferred
     @ManagedAsync
-    public void getBooksAsync(@Suspended final AsyncResponse response) {
+    public void getBooks(@Suspended final AsyncResponse response) {
         response.resume(dao.getBooks());
     }
 
     @GET
     @Path("/{id}")
-    @Produces(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML + ";qs=0.5"}) // qs between 0 and 1, JSON preferred
     @ManagedAsync
-    public void getBookAsync(@PathParam("id") String id, @Suspended final AsyncResponse response) {
+    public void getBook(@PathParam("id") String id, @Suspended final AsyncResponse response) {
         //return dao.getBook(id);
         ListenableFuture<Book> bookFuture = dao.getBookAsync(id);
         Futures.addCallback(bookFuture, new FutureCallback<Book>() {
@@ -51,7 +51,7 @@ public class BookResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @ManagedAsync
-    public void addBookAsync(Book book, @Suspended AsyncResponse response) {
+    public void addBook(Book book, @Suspended AsyncResponse response) {
         //response.resume(dao.addBook(book));
         ListenableFuture<Book> bookFuture = dao.addBookAsync(book);
         Futures.addCallback(bookFuture, new FutureCallback<Book>() {

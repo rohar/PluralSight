@@ -15,22 +15,22 @@ public class BookResourceNoAsync {
     //BookDao dao = new BookDao();
 
     @GET
-    @Produces(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML + ";qs=0.5"}) // qs between 0 and 1, JSON preferred
     public Collection<Book> getBooks() {
         return dao.getBooks();
     }
 
     @GET
     @Path("/{id}")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Book getBookAsync(@PathParam("id") String id) {
+    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML + ";qs=0.5"}) // qs between 0 and 1, JSON preferred
+    public Book getBook(@PathParam("id") String id) {
         return dao.getBook(id);
     }
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Book addBookAsync(Book book) {
+    public Book addBook(Book book) {
         return dao.addBook(book);
     }
 
