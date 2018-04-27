@@ -5,6 +5,7 @@ import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 import com.jcabi.xml.XML;
 import com.jcabi.xml.XMLDocument;
 import org.glassfish.jersey.client.ClientConfig;
+import org.glassfish.jersey.grizzly.connector.GrizzlyConnectorProvider;
 import org.glassfish.jersey.test.JerseyTest;
 import org.glassfish.jersey.test.TestProperties;
 import org.junit.Before;
@@ -25,8 +26,8 @@ public class BookResourceTest extends JerseyTest {
 
     @Override
     protected Application configure() {
-         enable(TestProperties.LOG_TRAFFIC);
-         enable(TestProperties.DUMP_ENTITY);
+//         enable(TestProperties.LOG_TRAFFIC);
+//         enable(TestProperties.DUMP_ENTITY);
 
         final BookDao dao = new BookDao();
 
@@ -41,6 +42,7 @@ public class BookResourceTest extends JerseyTest {
         JacksonJsonProvider json = new JacksonJsonProvider();
         json.configure(SerializationFeature.WRITE_NULL_MAP_VALUES, false);
         clientConfig.register(json);
+        clientConfig.connectorProvider(new GrizzlyConnectorProvider());
     }
 
     protected Response addBook(String author, String title, Date published, String isbn, String... extras) {
@@ -165,4 +167,63 @@ public class BookResourceTest extends JerseyTest {
         Response response = target("books").path(book1_id).request().header("If-None-Match", entityTag).get();
         assertEquals(304, response.getStatus());
     }
+
+    @Test
+    public void testUpdatedAuthor() {
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("author", "updatedAuthor");
+
+        Entity<Map<String, Object>> updateEntity = Entity.entity(updates, MediaType.APPLICATION_JSON);
+
+        Response updateResponse = target("books").path(book1_id).request().build("PATCH", updateEntity).invoke();
+
+        assertEquals(200, updateResponse.getStatus());
+
+        Response response = target("books").path(book1_id).request().get();
+        Map<String, Object> getResponseMap = toHashMap(response);
+
+        assertEquals("updatedAuthor", getResponseMap.get("author"));
+    }
+
+    @Test
+    public void testUpdatedExtra() {
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("hello", "world");
+
+        Entity<Map<String, Object>> updateEntity = Entity.entity(updates, MediaType.APPLICATION_JSON);
+
+        Response updateResponse = target("books").path(book1_id).request().build("PATCH", updateEntity).invoke();
+
+        assertEquals(200, updateResponse.getStatus());
+
+        Response response = target("books").path(book1_id).request().get();
+        Map<String, Object> getResponseMap = toHashMap(response);
+
+        assertEquals("world", getResponseMap.get("hello"));
+    }
+
+    @Test
+    public void testUpdateIfMatch() {
+        EntityTag entityTag = target("books").path(book1_id).request().get().getEntityTag();
+
+        Map<String, Object> updates = new HashMap<String, Object>();
+        updates.put("author", "updatedAuthor");
+        Entity<Map<String, Object>> updateEntity = Entity.entity(updates, MediaType.APPLICATION_JSON);
+        Response updateResponse = target("books")
+                .path(book1_id)
+                .request()
+                .header("If-Match", entityTag)
+                .build("PATCH", updateEntity).invoke();
+
+        assertEquals(200, updateResponse.getStatus());
+
+        Response updateResponse2 = target("books")
+                .path(book1_id)
+                .request()
+                .header("If-Match", entityTag)
+                .build("PATCH", updateEntity).invoke();
+
+        assertEquals(412, updateResponse2.getStatus());
+    }
+
 }

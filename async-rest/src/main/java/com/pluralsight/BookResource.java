@@ -61,12 +61,50 @@ public class BookResource {
     @Produces(MediaType.APPLICATION_JSON)
     @ManagedAsync
     public void addBook(@Valid @NotNull Book book, @Suspended AsyncResponse response) {
-        //response.resume(dao.addBook(book));
         ListenableFuture<Book> bookFuture = dao.addBookAsync(book);
         Futures.addCallback(bookFuture, new FutureCallback<Book>() {
             @Override
             public void onSuccess(Book addedBook) {
                 response.resume(addedBook);
+            }
+
+            @Override
+            public void onFailure(Throwable thrown) {
+                response.resume(thrown);
+            }
+        });
+    }
+
+    @Path("/{id}")
+    @PATCH
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @ManagedAsync
+    public void updateBook(@PathParam("id") final String id, final Book book, @Suspended final AsyncResponse response) {
+
+        ListenableFuture<Book> bookFuture = dao.getBookAsync(id);
+        Futures.addCallback(bookFuture, new FutureCallback<Book>() {
+            @Override
+            public void onSuccess(Book originalBook) {
+                Response.ResponseBuilder rb = request.evaluatePreconditions(generateEntityTag(originalBook));
+                if (rb != null) {
+                    // for If-Match, original object has changed, so we can't patch!
+                    response.resume(rb.build());
+                } else {
+                    ListenableFuture<Book> bookFuture = dao.updateBookAsync(id, book);
+                    Futures.addCallback(bookFuture, new FutureCallback<Book>() {
+                        @Override
+                        public void onSuccess(Book updatedBook) {
+                            EntityTag updatedEntityTag = generateEntityTag(updatedBook);
+                            response.resume(Response.ok().tag(updatedEntityTag).entity(updatedBook).build());
+                        }
+
+                        @Override
+                        public void onFailure(Throwable thrown) {
+                            response.resume(thrown);
+                        }
+                    });
+                }
             }
 
             @Override

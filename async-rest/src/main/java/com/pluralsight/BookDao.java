@@ -75,4 +75,43 @@ public class BookDao {
 
         return future;
     }
+
+    Book updateBook(String id, Book updates) throws BookNotFoundException {
+        Book book = books.get(id);
+
+        if (book == null) {
+            throw new BookNotFoundException("Book " + id + " is not found");
+        }
+
+        if (updates.getPublished() != null) {
+            book.setPublished(updates.getPublished());
+        }
+        if (updates.getTitle() != null) {
+            book.setTitle(updates.getTitle());
+        }
+        if (updates.getAuthor() != null) {
+            book.setAuthor(updates.getAuthor());
+        }
+        if (updates.getIsbn() != null) {
+            book.setIsbn(updates.getIsbn());
+        }
+        if (updates.getExtras() != null) {
+            for (String key : updates.getExtras().keySet()) {
+                book.set(key, updates.getExtras().get(key));
+            }
+        }
+
+        return book;
+    }
+
+    ListenableFuture<Book> updateBookAsync(final String id, final Book book) {
+        ListenableFuture<Book> future =
+                service.submit(new Callable<Book> () {
+                    public Book call() throws Exception {
+                        return updateBook(id, book);
+                    }
+                });
+
+        return future;
+    }
 }

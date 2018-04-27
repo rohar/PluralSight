@@ -28,7 +28,6 @@ public class BookResourceNoAsync {
     @Path("/{id}")
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML + ";qs=0.5"}) // qs between 0 and 1, JSON preferred
     public Response getBook(@PathParam("id") String id) throws BookNotFoundException {
-
         Book book = dao.getBook(id);
 
         EntityTag entityTag = generateEntityTag(book);
@@ -46,6 +45,24 @@ public class BookResourceNoAsync {
     @Produces(MediaType.APPLICATION_JSON)
     public Book addBook(@Valid @NotNull Book book) {
         return dao.addBook(book);
+    }
+
+    @Path("/{id}")
+    @PATCH
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response updateBook(@PathParam("id") String id, Book book) throws BookNotFoundException {
+        Book originalBook = dao.getBook(id);
+
+        Response.ResponseBuilder rb = request.evaluatePreconditions(generateEntityTag(originalBook));
+        if (rb != null) {
+            // for If-Match, original object has changed, so we can't patch!
+            return rb.build();
+        }
+
+        Book updatedBook = dao.updateBook(id, book);
+        EntityTag updatedEntityTag = generateEntityTag(updatedBook);
+        return Response.ok().tag(updatedEntityTag).entity(updatedBook).build();
     }
 
     EntityTag generateEntityTag(Book book) {

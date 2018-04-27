@@ -5,6 +5,7 @@ import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 import com.jcabi.xml.XML;
 import com.jcabi.xml.XMLDocument;
 import org.glassfish.jersey.client.ClientConfig;
+import org.glassfish.jersey.grizzly.connector.GrizzlyConnectorProvider;
 import org.glassfish.jersey.test.JerseyTest;
 import org.glassfish.jersey.test.TestProperties;
 import org.junit.Before;
@@ -44,6 +45,7 @@ public class BookResourceNoAsyncTest extends JerseyTest {
         JacksonJsonProvider json = new JacksonJsonProvider();
         json.configure(SerializationFeature.WRITE_NULL_MAP_VALUES, false);
         clientConfig.register(json);
+        clientConfig.connectorProvider(new GrizzlyConnectorProvider());
     }
 
     protected Response addBook(String author, String title, Date published, String isbn, String... extras) {
@@ -117,7 +119,7 @@ public class BookResourceNoAsyncTest extends JerseyTest {
 
     @Test
     public void getBooksAsXml() {
-        String output = target("books").request(MediaType.APPLICATION_XML).get().readEntity(String.class);
+        String output = target("books_no_async").request(MediaType.APPLICATION_XML).get().readEntity(String.class);
         XML xml = new XMLDocument(output);
 
         assertEquals("author1", xml.xpath("/books/book[@id='" + book1_id + "']/author/text()").get(0));
@@ -146,13 +148,13 @@ public class BookResourceNoAsyncTest extends JerseyTest {
 
     @Test
     public void testAddBookNoBook() {
-        Response response = target("books").request().post(null);
+        Response response = target("books_no_async").request().post(null);
         assertEquals(400, response.getStatus());
     }
 
     @Test
     public void bookNotFoundWithMessage() {
-        Response response = target("books").path("1").request().get();
+        Response response = target("books_no_async").path("1").request().get();
 
         assertEquals(404, response.getStatus());
 
@@ -162,11 +164,72 @@ public class BookResourceNoAsyncTest extends JerseyTest {
 
     @Test
     public void testBookEntityTagNotModified() {
-        EntityTag entityTag = target("books").path(book1_id).request().get().getEntityTag();
+        EntityTag entityTag = target("books_no_async").path(book1_id).request().get().getEntityTag();
         assertNotNull(entityTag);
 
-        Response response = target("books").path(book1_id).request().header("If-None-Match", entityTag).get();
+        Response response = target("books_no_async").path(book1_id).request().header("If-None-Match", entityTag).get();
         assertEquals(304, response.getStatus());
     }
+
+    @Test
+    public void testUpdatedAuthor() {
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("author", "updatedAuthor");
+
+        Entity<Map<String, Object>> updateEntity = Entity.entity(updates, MediaType.APPLICATION_JSON);
+
+        Response updateResponse = target("books_no_async").path(book1_id).request().build("PATCH", updateEntity).invoke();
+
+        assertEquals(200, updateResponse.getStatus());
+
+        Response response = target("books_no_async").path(book1_id).request().get();
+        Map<String, Object> getResponseMap = toHashMap(response);
+
+        assertEquals("updatedAuthor", getResponseMap.get("author"));
+
+    }
+
+    @Test
+    public void testUpdatedExtra() {
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("hello", "world");
+
+        Entity<Map<String, Object>> updateEntity = Entity.entity(updates, MediaType.APPLICATION_JSON);
+
+        Response updateResponse = target("books_no_async").path(book1_id).request().build("PATCH", updateEntity).invoke();
+
+        assertEquals(200, updateResponse.getStatus());
+
+        Response response = target("books_no_async").path(book1_id).request().get();
+        Map<String, Object> getResponseMap = toHashMap(response);
+
+        assertEquals("world", getResponseMap.get("hello"));
+    }
+
+    @Test
+    public void testUpdateIfMatch() {
+        EntityTag entityTag = target("books_no_async").path(book1_id).request().get().getEntityTag();
+
+        Map<String, Object> updates = new HashMap<String, Object>();
+        updates.put("author", "updatedAuthor");
+        Entity<Map<String, Object>> updateEntity = Entity.entity(updates, MediaType.APPLICATION_JSON);
+        Response updateResponse = target("books_no_async")
+                .path(book1_id)
+                .request()
+                .header("If-Match", entityTag)
+                .build("PATCH", updateEntity).invoke();
+
+        assertEquals(200, updateResponse.getStatus());
+
+        Response updateResponse2 = target("books_no_async")
+                .path(book1_id)
+                .request()
+                .header("If-Match", entityTag)
+                .build("PATCH", updateEntity).invoke();
+
+        assertEquals(412, updateResponse2.getStatus());
+    }
+
+
 
 }
