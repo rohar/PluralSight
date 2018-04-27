@@ -119,7 +119,7 @@ public class BookResourceNoAsyncTest extends JerseyTest {
 
     @Test
     public void getBooksAsXml() {
-        String output = target("books_no_async").request(MediaType.APPLICATION_XML).get().readEntity(String.class);
+        String output = target("books").request(MediaType.APPLICATION_XML).get().readEntity(String.class);
         XML xml = new XMLDocument(output);
 
         assertEquals("author1", xml.xpath("/books/book[@id='" + book1_id + "']/author/text()").get(0));

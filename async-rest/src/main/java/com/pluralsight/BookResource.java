@@ -29,6 +29,7 @@ public class BookResource {
         response.resume(dao.getBooks());
     }
 
+    @PoweredBy("Pluralsight")
     @GET
     @Path("/{id}")
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML + ";qs=0.5"}) // qs between 0 and 1, JSON preferred

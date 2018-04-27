@@ -16,9 +16,7 @@ import javax.ws.rs.core.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class BookResourceTest extends JerseyTest {
     private String book1_id;
@@ -226,4 +224,40 @@ public class BookResourceTest extends JerseyTest {
         assertEquals(412, updateResponse2.getStatus());
     }
 
+    @Test
+    public void testPatchMethodOverride() {
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("author", "updatedAuthor");
+
+        Entity<Map<String, Object>> updateEntity = Entity.entity(updates, MediaType.APPLICATION_JSON);
+
+        Response updatedResponse = target("books").path(book1_id).queryParam("_method", "PATCH").request().post(updateEntity);
+
+        assertEquals(200, updatedResponse.getStatus());
+
+        Response getResponse = target("books").path(book1_id).request().get();
+        Map<String, Object> getResponseMap = toHashMap(getResponse);
+
+        assertEquals("updatedAuthor", getResponseMap.get("author"));
+    }
+
+    @Test
+    public void testContentNegotiationExtensions() {
+        Response xmlResponse = target("books").path(book1_id + ".xml").request().get();
+        assertEquals(MediaType.APPLICATION_XML, xmlResponse.getHeaderString("Content-Type"));
+
+        Response jsonResponse = target("books").path(book1_id + ".json").request().get();
+        assertEquals(MediaType.APPLICATION_JSON, jsonResponse.getHeaderString("Content-Type"));
+
+    }
+
+    @Test
+    public void testPoweredByHeader() {
+        Response response = target("books").path(book1_id).request().get();
+        assertEquals("Pluralsight", response.getHeaderString("X-Powered-By"));
+
+        Response response2 = target("books").request().get();
+        assertNull(response2.getHeaderString("X-Powered-By"));
+
+    }
 }
