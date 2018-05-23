@@ -1,0 +1,23 @@
+/* any p which is a child of div, direct or indirect */
+div p {
+    background-color: #ddddaa;
+}
+
+/* direct descendant */
+div > p {
+    background-color: #ddddaa;
+}
+
+/* attribute selector 
+<img src="gradient.jpg" alt="spacer"/>
+*/
+img[alt=spacer] {
+    padding: 0px;
+}
+
+/* psuedo class */
+a:visited {
+    color: #dddddd;
+}
+
+

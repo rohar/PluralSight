@@ -1,0 +1,13 @@
+/* @import url("styles2.css");*/
+
+div p {
+    background-color: gray;
+}
+
+p {
+    background-color: green;
+}
+
+#content {
+    background-color: fuchsia;
+}
